@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeuroScan AI — Brain Tumor Detection</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    :root {
+      --navy: #050d1f;
+      --navy2: #0b1a38;
+      --cyan: #00d4ff;
+      --cyan-dim: rgba(0,212,255,0.15);
+      --violet: #7c3aed;
+      --violet-dim: rgba(124,58,237,0.15);
+      --emerald: #10b981;
+      --red: #ef4444;
+      --white: #f0f6ff;
+      --muted: rgba(240,246,255,0.5);
+      --card: rgba(255,255,255,0.04);
+      --card-border: rgba(0,212,255,0.15);
+      --glass: rgba(11,26,56,0.7);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    /* ─── ANIMATED BG ─── */
+    .bg-mesh {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 20%, rgba(0,212,255,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 70%, rgba(124,58,237,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 100% 100% at 50% 50%, rgba(16,185,129,0.03) 0%, transparent 70%);
+      animation: meshPulse 8s ease-in-out infinite alternate;
+    }
+    @keyframes meshPulse {
+      from { opacity: 0.7; transform: scale(1); }
+      to   { opacity: 1;   transform: scale(1.05); }
+    }
+
+    /* Floating particles */
+    .particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .particle {
+      position: absolute; border-radius: 50%;
+      background: var(--cyan); opacity: 0;
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 0.4; }
+      90%  { opacity: 0.1; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    /* ─── LAYOUT ─── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+
+    /* ─── HEADER ─── */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1.2rem 0;
+      background: rgba(5,13,31,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--card-border);
+    }
+    header .container { display: flex; align-items: center; justify-content: space-between; }
+    .logo {
+      display: flex; align-items: center; gap: 0.75rem;
+      text-decoration: none; color: var(--white);
+    }
+    .logo-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; color: white;
+      box-shadow: 0 0 20px rgba(0,212,255,0.3);
+    }
+    .logo-text { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.3rem; }
+    .logo-text span { color: var(--cyan); }
+    nav { display: flex; align-items: center; gap: 2.5rem; }
+    nav a {
+      color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;
+      letter-spacing: 0.03em; transition: color 0.2s;
+    }
+    nav a:hover { color: var(--white); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      color: white !important; padding: 0.55rem 1.4rem;
+      border-radius: 50px; font-weight: 600 !important;
+      transition: box-shadow 0.2s, transform 0.2s !important;
+    }
+    .nav-cta:hover { box-shadow: 0 0 25px rgba(0,212,255,0.4); transform: translateY(-1px); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center;
+      padding: 8rem 0 5rem;
+    }
+    .hero-inner {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--cyan-dim); border: 1px solid rgba(0,212,255,0.3);
+      border-radius: 50px; padding: 0.4rem 1rem;
+      font-size: 0.78rem; font-weight: 600; color: var(--cyan);
+      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+    .hero-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--cyan); animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    h1 {
+      font-family: 'Sora', sans-serif; font-weight: 800;
+      font-size: clamp(2.5rem, 5vw, 3.8rem);
+      line-height: 1.1; margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+    h1 .highlight {
+      background: linear-gradient(135deg, var(--cyan) 0%, #a78bfa 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-desc {
+      font-size: 1.05rem; line-height: 1.7;
+      color: var(--muted); margin-bottom: 2.5rem; max-width: 480px;
+    }
+    .hero-stats {
+      display: flex; gap: 2.5rem; margin-bottom: 2.5rem;
+    }
+    .stat { border-left: 2px solid var(--cyan); padding-left: 1rem; }
+    .stat-num {
+      font-family: 'Sora', sans-serif; font-weight: 800;
+      font-size: 1.8rem; color: var(--cyan);
+    }
+    .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.1rem; }
+    .hero-actions { display: flex; gap: 1rem; align-items: center; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: linear-gradient(135deg, var(--cyan), #38bdf8);
+      color: var(--navy); font-weight: 700; font-size: 0.95rem;
+      padding: 0.85rem 2rem; border-radius: 50px; text-decoration: none;
+      transition: all 0.3s; box-shadow: 0 0 30px rgba(0,212,255,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 45px rgba(0,212,255,0.5); }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      border: 1px solid var(--card-border); color: var(--white);
+      font-weight: 500; font-size: 0.95rem;
+      padding: 0.85rem 2rem; border-radius: 50px; text-decoration: none;
+      transition: all 0.3s;
+    }
+    .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    /* ─── HERO ILLUSTRATION ─── */
+    .hero-visual { position: relative; display: flex; justify-content: center; align-items: center; }
+    .hero-card-main {
+      width: 340px; height: 420px;
+      background: var(--glass); border: 1px solid var(--card-border);
+      border-radius: 28px; padding: 2rem;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 80px rgba(0,212,255,0.08), 0 40px 80px rgba(0,0,0,0.4);
+      position: relative; overflow: hidden;
+      animation: heroCardFloat 4s ease-in-out infinite alternate;
+    }
+    @keyframes heroCardFloat {
+      from { transform: translateY(0px) rotate(0deg); }
+      to   { transform: translateY(-12px) rotate(0.5deg); }
+    }
+    .hero-card-main::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    }
+    .card-scan-ring {
+      width: 200px; height: 200px; border-radius: 50%;
+      border: 2px solid rgba(0,212,255,0.3);
+      margin: 0 auto 1.5rem; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      animation: scanRing 3s linear infinite;
+    }
+    @keyframes scanRing {
+      from { box-shadow: 0 0 0 0 rgba(0,212,255,0.4); }
+      to   { box-shadow: 0 0 0 20px rgba(0,212,255,0); }
+    }
+    .card-scan-ring::after {
+      content: ''; position: absolute; top: -2px; left: 50%;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--cyan); transform-origin: 0 102px;
+      animation: orbit 2s linear infinite;
+    }
+    @keyframes orbit {
+      from { transform: rotate(0deg) translateX(0) rotate(0deg); }
+      to   { transform: rotate(360deg) translateX(0) rotate(-360deg); }
+    }
+    .brain-svg { width: 110px; height: 110px; }
+    .card-result-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.2); border-radius: 12px; padding: 0.8rem 1rem;
+      margin-bottom: 0.8rem; font-size: 0.85rem;
+    }
+    .result-label { color: var(--muted); }
+    .result-val-ok { color: var(--emerald); font-weight: 700; }
+    .confidence-bar {
+      height: 6px; background: rgba(255,255,255,0.05);
+      border-radius: 3px; margin-top: 0.5rem; overflow: hidden;
+    }
+    .confidence-fill {
+      height: 100%; width: 94%;
+      background: linear-gradient(90deg, var(--emerald), #34d399);
+      border-radius: 3px; animation: fillBar 2s ease-out;
+    }
+    @keyframes fillBar { from{width:0} to{width:94%} }
+
+    /* Floating mini cards */
+    .float-card {
+      position: absolute; background: var(--glass);
+      border: 1px solid var(--card-border); border-radius: 16px;
+      padding: 1rem 1.2rem; backdrop-filter: blur(10px);
+      font-size: 0.8rem; animation: floatCard 6s ease-in-out infinite alternate;
+    }
+    @keyframes floatCard {
+      from { transform: translateY(0px); }
+      to   { transform: translateY(-8px); }
+    }
+    .float-card-1 { top: 0; left: -60px; animation-delay: 0s; }
+    .float-card-2 { bottom: 60px; right: -50px; animation-delay: 2s; }
+    .float-card-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .float-card-val { font-weight: 700; color: var(--cyan); font-size: 1rem; }
+    .float-card-desc { color: var(--muted); font-size: 0.72rem; }
+
+    /* ─── UPLOAD SECTION ─── */
+    .upload-section {
+      padding: 6rem 0; background: rgba(0,0,0,0.2);
+    }
+    .section-label {
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      color: var(--cyan); font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1rem;
+    }
+    .section-label::before, .section-label::after {
+      content: ''; flex: 1; max-width: 60px; height: 1px; background: var(--cyan); opacity: 0.4;
+    }
+    h2 {
+      font-family: 'Sora', sans-serif; font-weight: 800;
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem); text-align: center;
+      letter-spacing: -0.02em; margin-bottom: 1rem;
+    }
+    .section-desc { text-align: center; color: var(--muted); max-width: 550px; margin: 0 auto 3rem; line-height: 1.7; }
+
+    /* UPLOAD CARD */
+    .upload-card {
+      max-width: 700px; margin: 0 auto;
+      background: var(--glass); border: 1px solid var(--card-border);
+      border-radius: 28px; padding: 3rem;
+      backdrop-filter: blur(20px);
+    }
+    .drop-zone {
+      border: 2px dashed rgba(0,212,255,0.3);
+      border-radius: 20px; padding: 3rem 2rem;
+      text-align: center; cursor: pointer;
+      transition: all 0.3s; position: relative;
+      background: rgba(0,212,255,0.02);
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--cyan);
+      background: rgba(0,212,255,0.05);
+      box-shadow: 0 0 40px rgba(0,212,255,0.1);
+    }
+    .drop-icon {
+      font-size: 3rem; margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .drop-title { font-family: 'Sora',sans-serif; font-weight: 700; font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .drop-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .drop-formats {
+      display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .format-tag {
+      background: var(--violet-dim); border: 1px solid rgba(124,58,237,0.3);
+      color: #a78bfa; border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600;
+    }
+    #fileInput { display: none; }
+
+    /* Preview */
+    .preview-area { display: none; margin-top: 1.5rem; }
+    .preview-area.show { display: block; }
+    .preview-img-wrap {
+      border-radius: 16px; overflow: hidden; margin-bottom: 1rem;
+      border: 1px solid var(--card-border); position: relative;
+    }
+    .preview-img-wrap img { width: 100%; max-height: 280px; object-fit: contain; display: block; background: #000; }
+    .preview-info {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.7rem 1rem;
+      background: rgba(0,0,0,0.2); border-radius: 10px;
+      font-size: 0.85rem; color: var(--muted);
+    }
+    .preview-info i { color: var(--cyan); margin-right: 0.5rem; }
+    .btn-remove {
+      background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
+      color: #f87171; border-radius: 8px; padding: 0.3rem 0.8rem;
+      cursor: pointer; font-size: 0.8rem; transition: all 0.2s;
+    }
+    .btn-remove:hover { background: rgba(239,68,68,0.25); }
+
+    .btn-analyze {
+      width: 100%; margin-top: 1.5rem;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      color: white; font-family: 'Sora', sans-serif; font-weight: 700;
+      font-size: 1rem; padding: 1rem; border: none; border-radius: 14px;
+      cursor: pointer; letter-spacing: 0.02em;
+      transition: all 0.3s; position: relative; overflow: hidden;
+    }
+    .btn-analyze::before {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      width: 0; height: 0; background: rgba(255,255,255,0.2); border-radius: 50%;
+      transform: translate(-50%,-50%); transition: width 0.5s, height 0.5s;
+    }
+    .btn-analyze:hover::before { width: 400px; height: 400px; }
+    .btn-analyze:hover { box-shadow: 0 0 40px rgba(0,212,255,0.4); transform: translateY(-2px); }
+    .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Loading overlay */
+    .loading-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(5,13,31,0.92); backdrop-filter: blur(10px);
+      flex-direction: column; align-items: center; justify-content: center;
+    }
+    .loading-overlay.show { display: flex; }
+    .loader-ring {
+      width: 80px; height: 80px; border-radius: 50%;
+      border: 3px solid rgba(0,212,255,0.1);
+      border-top-color: var(--cyan);
+      animation: spin 0.8s linear infinite; margin-bottom: 2rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text { font-family: 'Sora',sans-serif; font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .loader-sub { color: var(--muted); font-size: 0.85rem; }
+    .loader-dots::after { content: ''; animation: dots 1.5s steps(4) infinite; }
+    @keyframes dots { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
+
+    /* ─── HOW IT WORKS ─── */
+    .how-section { padding: 6rem 0; }
+    .steps-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .step-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 20px; padding: 2rem;
+      transition: all 0.3s; position: relative; overflow: hidden;
+    }
+    .step-card:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 30px rgba(0,212,255,0.1);
+      transform: translateY(-4px);
+    }
+    .step-card::after {
+      content: attr(data-num);
+      position: absolute; top: -1rem; right: 1rem;
+      font-family: 'Sora',sans-serif; font-weight: 800;
+      font-size: 5rem; color: rgba(255,255,255,0.03);
+      line-height: 1;
+    }
+    .step-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; margin-bottom: 1.2rem;
+    }
+    .step-icon.blue { background: var(--cyan-dim); color: var(--cyan); }
+    .step-icon.violet { background: var(--violet-dim); color: #a78bfa; }
+    .step-icon.green { background: rgba(16,185,129,0.15); color: var(--emerald); }
+    .step-title {
+      font-family: 'Sora',sans-serif; font-weight: 700;
+      font-size: 1.05rem; margin-bottom: 0.6rem;
+    }
+    .step-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+    /* ─── DOCTORS SECTION ─── */
+    .doctors-section { padding: 6rem 0; background: rgba(0,0,0,0.15); }
+    .doctors-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .doctor-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 20px; padding: 2rem; text-align: center;
+      transition: all 0.3s;
+    }
+    .doctor-card:hover {
+      border-color: rgba(124,58,237,0.5);
+      transform: translateY(-4px);
+      box-shadow: 0 0 30px rgba(124,58,237,0.1);
+    }
+    .doctor-avatar {
+      width: 90px; height: 90px; border-radius: 50%;
+      margin: 0 auto 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.8rem; position: relative;
+    }
+    .doctor-avatar::after {
+      content: ''; position: absolute; inset: -3px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      z-index: -1;
+    }
+    .doctor-avatar::before {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      background: var(--navy); z-index: -1; margin: -3px;
+      border: 3px solid var(--navy);
+    }
+    .doctor-name { font-family:'Sora',sans-serif; font-weight:700; margin-bottom:0.3rem; }
+    .doctor-spec { color: var(--cyan); font-size: 0.8rem; font-weight:600; margin-bottom:0.8rem; }
+    .doctor-desc { color: var(--muted); font-size: 0.85rem; line-height:1.6; }
+
+    /* ─── AI SECTION ─── */
+    .ai-section { padding: 6rem 0; }
+    .ai-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: center; margin-top: 3rem;
+    }
+    .ai-features { list-style: none; }
+    .ai-features li {
+      display: flex; align-items: flex-start; gap: 1rem;
+      padding: 1.2rem 0; border-bottom: 1px solid var(--card-border);
+    }
+    .ai-features li:last-child { border-bottom: none; }
+    .ai-feat-icon {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; margin-top: 0.1rem;
+    }
+    .ai-feat-title { font-weight:600; margin-bottom:0.3rem; }
+    .ai-feat-desc { color:var(--muted); font-size:0.875rem; line-height:1.5; }
+
+    .ai-visual {
+      background: var(--glass); border: 1px solid var(--card-border);
+      border-radius: 24px; padding: 2.5rem;
+      backdrop-filter: blur(20px); position: relative; overflow: hidden;
+    }
+    .ai-visual::before {
+      content: ''; position: absolute; top: -50%; right: -30%;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);
+    }
+    .neural-grid {
+      display: grid; grid-template-columns: repeat(5,1fr); gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .neural-node {
+      aspect-ratio: 1; border-radius: 50%;
+      background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; color: var(--cyan);
+      animation: nodeFlicker 3s ease-in-out infinite;
+    }
+    .neural-node:nth-child(2n) { animation-delay: 0.5s; background: rgba(124,58,237,0.1); border-color: rgba(124,58,237,0.2); color: #a78bfa; }
+    .neural-node:nth-child(3n) { animation-delay: 1s; }
+    @keyframes nodeFlicker {
+      0%,100%{opacity:0.5;transform:scale(1)}
+      50%{opacity:1;transform:scale(1.1)}
+    }
+    .ai-stat-row { display:flex; gap:1rem; }
+    .ai-stat-chip {
+      flex:1; background: rgba(0,0,0,0.2); border-radius:12px; padding:1rem;
+      text-align:center;
+    }
+    .ai-stat-chip-num { font-family:'Sora',sans-serif; font-weight:800; font-size:1.5rem; color:var(--cyan); }
+    .ai-stat-chip-label { font-size:0.75rem; color:var(--muted); margin-top:0.2rem; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 3rem 0;
+      background: rgba(0,0,0,0.2);
+    }
+    .footer-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 3rem; margin-bottom: 3rem;
+    }
+    .footer-brand .logo-text { font-size: 1.1rem; }
+    .footer-desc { color: var(--muted); font-size: 0.875rem; line-height: 1.7; margin: 1rem 0 1.5rem; }
+    .footer-socials { display: flex; gap: 0.8rem; }
+    .social-btn {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: var(--card); border: 1px solid var(--card-border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 0.9rem; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .social-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+    .footer-col h4 {
+      font-family:'Sora',sans-serif; font-weight:700; font-size:0.9rem;
+      margin-bottom:1.2rem; color:var(--white);
+    }
+    .footer-links { list-style:none; }
+    .footer-links li { margin-bottom:0.7rem; }
+    .footer-links a { color:var(--muted); text-decoration:none; font-size:0.875rem; transition:color 0.2s; }
+    .footer-links a:hover { color:var(--white); }
+    .footer-bottom {
+      border-top: 1px solid var(--card-border); padding-top: 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.8rem; color: var(--muted);
+    }
+    .footer-bottom span { color: var(--cyan); }
+    .footer-bottom a { color: var(--muted); text-decoration: none; }
+
+    .result-card {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(0,212,255,0.14);
+      border-radius: 30px; padding: 2rem;
+      backdrop-filter: blur(20px);
+    }
+    .result-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; margin-bottom: 1.8rem;
+    }
+    .result-header h2 { margin-top: 0.2rem; font-size: clamp(1.5rem, 2vw, 2rem); }
+    .btn-download, .btn-secondary {
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      color: var(--navy); border: none; border-radius: 14px;
+      padding: 0.95rem 1.4rem; font-weight: 700; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-download:hover, .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,212,255,0.2); }
+    .btn-secondary { margin-top: 1.5rem; width: 100%; background: rgba(255,255,255,0.08); color: var(--white); border: 1px solid rgba(255,255,255,0.1); }
+
+    .result-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; align-items: start; }
+    .result-summary { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 1.5rem; }
+    .summary-metric { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+    .summary-label { color: var(--muted); font-size: 0.9rem; }
+    .summary-value { font-family: 'Sora', sans-serif; font-size: 1.55rem; font-weight: 800; color: var(--cyan); }
+    .summary-note { color: var(--muted); line-height: 1.7; margin-top: 1rem; font-size: 0.95rem; }
+
+    .heatmap-panel { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 1.2rem; }
+    .heatmap-tag { color: var(--cyan); font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem; }
+    .heatmap-panel img { width: 100%; border-radius: 20px; max-height: 420px; object-fit: contain; background: #000; }
+
+    .report-panel { margin-top: 1.8rem; }
+    .report-label { color: var(--muted); font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem; display: inline-block; }
+    .report-box {
+      white-space: pre-wrap; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 20px;
+      padding: 1.5rem; color: var(--white); line-height: 1.8;
+      font-family: 'Courier New', monospace; max-height: 320px; overflow-y: auto;
+    }
+
+    @media (max-width: 900px) {
+      .result-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      .hero-inner, .ai-grid { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .doctors-grid { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      nav { gap: 1.5rem; }
+    }
+    @media (max-width: 600px) {
+      .doctors-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      nav a:not(.nav-cta):not(.logo) { display: none; }
+    }
+
+    /* scroll reveal */
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- Animated Background -->
+<div class="bg-mesh"></div>
+<div class="particles" id="particles"></div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader-ring"></div>
+  <div class="loader-text">Analyzing MRI Scan<span class="loader-dots"></span></div>
+  <div class="loader-sub">Running deep learning inference & GradCAM heatmap</div>
+</div>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+  <div class="container">
+    <a href="/" class="logo">
+      <div class="logo-icon"><i class="fas fa-brain"></i></div>
+      <div class="logo-text">Neuro<span>Scan</span> AI</div>
+    </a>
+    <nav>
+      <a href="#upload">Analyze</a>
+      <a href="#how">How It Works</a>
+      <a href="#ai">Technology</a>
+      <a href="#upload" class="nav-cta">Start Scan →</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="home">
+  <div class="container">
+    <div class="hero-inner">
+      <!-- Left -->
+      <div class="hero-left">
+        <div class="hero-badge"><span class="dot"></span> AI-Powered Diagnostics</div>
+        <h1>Detect Brain Tumors with <span class="highlight">Deep Learning</span></h1>
+        <p class="hero-desc">Upload an MRI scan and get instant AI-powered analysis with GradCAM heatmap visualization. Powered by advanced convolutional neural networks.</p>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-num">98.4%</div>
+            <div class="stat-label">Accuracy Rate</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">&lt;3s</div>
+            <div class="stat-label">Analysis Time</div>
+          </div>
+          <div class="stat">
+            <div class="stat-num">CNN</div>
+            <div class="stat-label">Deep Learning</div>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <a href="#upload" class="btn-primary"><i class="fas fa-upload"></i> Upload MRI Scan</a>
+          <a href="#how" class="btn-ghost"><i class="fas fa-play"></i> How it works</a>
+        </div>
+      </div>
+      <!-- Right visual -->
+      <div class="hero-visual">
+        <div class="float-card float-card-1">
+          <div class="float-card-icon">🧠</div>
+          <div class="float-card-val">GradCAM</div>
+          <div class="float-card-desc">Heatmap Ready</div>
+        </div>
+        <div class="hero-card-main">
+          <div class="card-scan-ring">
+            <!-- Brain SVG -->
+            <svg class="brain-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="50" cy="52" rx="35" ry="30" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.4)" stroke-width="1.5"/>
+              <path d="M50 22 C40 22 28 30 26 44 C24 52 28 60 34 64 C34 70 38 76 44 78 C46 80 50 80 50 80" stroke="rgba(0,212,255,0.6)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              <path d="M50 22 C60 22 72 30 74 44 C76 52 72 60 66 64 C66 70 62 76 56 78 C54 80 50 80 50 80" stroke="rgba(124,58,237,0.6)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              <path d="M34 50 C38 46 42 48 46 44 C48 42 50 40 52 42 C56 46 58 50 62 48" stroke="rgba(0,212,255,0.5)" stroke-width="1" fill="none" stroke-linecap="round"/>
+              <path d="M30 56 C35 54 40 58 45 55 C48 53 52 55 55 53 C59 51 64 55 68 54" stroke="rgba(124,58,237,0.4)" stroke-width="1" fill="none" stroke-linecap="round"/>
+              <circle cx="50" cy="22" r="3" fill="var(--cyan)" opacity="0.8"/>
+              <circle cx="26" cy="44" r="2" fill="rgba(124,58,237,0.8)"/>
+              <circle cx="74" cy="44" r="2" fill="rgba(124,58,237,0.8)"/>
+            </svg>
+          </div>
+          <div class="card-result-row">
+            <span class="result-label">Status</span>
+            <span class="result-val-ok">✓ No Tumor</span>
+          </div>
+          <div class="card-result-row">
+            <span class="result-label">Confidence</span>
+            <span style="color:var(--cyan);font-weight:700">94.3%</span>
+          </div>
+          <div class="card-result-row" style="flex-direction:column;align-items:flex-start">
+            <span class="result-label" style="margin-bottom:0.5rem">Model Certainty</span>
+            <div class="confidence-bar" style="width:100%"><div class="confidence-fill"></div></div>
+          </div>
+        </div>
+        <div class="float-card float-card-2">
+          <div class="float-card-icon">📊</div>
+          <div class="float-card-val">Report</div>
+          <div class="float-card-desc">Download PDF</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ UPLOAD ═══ -->
+<section class="upload-section" id="upload">
+  <div class="container">
+    <div class="section-label">Step 01</div>
+    <h2>Upload Your MRI Scan</h2>
+    <p class="section-desc">Drag & drop or click to select your brain MRI image. Supported formats: JPG, PNG, JPEG, WEBP.</p>
+
+    <div class="upload-card reveal">
+      <form id="uploadForm" action="/predict" method="POST" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="file" accept="image/*" required/>
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+          <div class="drop-title">Drop MRI scan here</div>
+          <div class="drop-sub">or click to browse your files</div>
+          <div class="drop-formats">
+            <span class="format-tag">JPG</span>
+            <span class="format-tag">PNG</span>
+            <span class="format-tag">JPEG</span>
+            <span class="format-tag">WEBP</span>
+          </div>
+        </div>
+
+        <div class="preview-area" id="previewArea">
+          <div class="preview-img-wrap">
+            <img id="previewImg" src="" alt="MRI Preview"/>
+          </div>
+          <div class="preview-info">
+            <span><i class="fas fa-file-image"></i> <span id="fileName">—</span></span>
+            <button type="button" class="btn-remove" onclick="removeFile()">✕ Remove</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-analyze" id="analyzeBtn" disabled>
+          <i class="fas fa-microscope"></i>&nbsp;&nbsp;Analyze MRI Scan
+        </button>
+      </form>
+    </div>
+
+    <section class="result-section reveal" id="resultSection" style="display:none; margin-top:2.5rem;">
+      <div class="result-card">
+        <div class="result-header">
+          <div>
+            <div class="section-label">Analysis Complete</div>
+            <h2 id="resultTitle">Diagnosis Summary</h2>
+          </div>
+          <button class="btn-download" id="downloadReportBtn" type="button">Download Report</button>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-summary">
+            <div class="summary-metric">
+              <span class="summary-label">Prediction</span>
+              <span class="summary-value" id="labelText">—</span>
+            </div>
+            <div class="summary-metric">
+              <span class="summary-label">Confidence</span>
+              <span class="summary-value" id="confidenceText">—</span>
+            </div>
+            <div class="summary-note">The heatmap below shows the areas the AI model focused on during prediction.</div>
+          </div>
+
+          <div class="heatmap-panel">
+            <div class="heatmap-tag">GradCAM Heatmap</div>
+            <img id="heatmapImg" src="" alt="Heatmap Overlay" />
+          </div>
+        </div>
+
+        <div class="report-panel">
+          <div class="report-label">AI Medical Report</div>
+          <pre id="reportBox" class="report-box"></pre>
+        </div>
+
+        <button class="btn-secondary" id="resetBtn" type="button">Analyze Another Scan</button>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section class="how-section" id="how">
+  <div class="container">
+    <div class="section-label">Process</div>
+    <h2>How It Works</h2>
+    <p class="section-desc">Three simple steps from upload to diagnosis report.</p>
+    <div class="steps-grid">
+      <div class="step-card reveal" data-num="01">
+        <div class="step-icon blue"><i class="fas fa-upload"></i></div>
+        <div class="step-title">Upload MRI Image</div>
+        <div class="step-desc">Drag & drop your brain MRI scan in any standard image format. Our system accepts DICOM-derived images.</div>
+      </div>
+      <div class="step-card reveal" data-num="02" style="transition-delay:0.1s">
+        <div class="step-icon violet"><i class="fas fa-brain"></i></div>
+        <div class="step-title">AI Deep Analysis</div>
+        <div class="step-desc">Our CNN model processes the scan, identifies patterns, and generates a GradCAM heatmap highlighting regions of interest.</div>
+      </div>
+      <div class="step-card reveal" data-num="03" style="transition-delay:0.2s">
+        <div class="step-icon green"><i class="fas fa-file-medical"></i></div>
+        <div class="step-title">Download Full Report</div>
+        <div class="step-desc">Get a detailed PDF report with prediction result, confidence score, heatmap overlay, and timestamp — ready to share.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DOCTORS ═══ -->
+<section class="doctors-section" id="team">
+  <div class="container">
+    <div class="section-label">Expertise</div>
+    <h2>Built for Medical Professionals</h2>
+    <p class="section-desc">Designed in collaboration with radiologists and oncologists to meet clinical standards.</p>
+    <div class="doctors-grid">
+      <div class="doctor-card reveal">
+        <div class="doctor-avatar" style="background:var(--navy2)">🧑‍⚕️</div>
+        <div class="doctor-name">Radiologists</div>
+        <div class="doctor-spec">Neuroradiology</div>
+        <div class="doctor-desc">AI-assisted pattern recognition to complement expert radiological review of MRI sequences.</div>
+      </div>
+      <div class="doctor-card reveal" style="transition-delay:0.1s">
+        <div class="doctor-avatar" style="background:var(--navy2)">🧬</div>
+        <div class="doctor-name">Oncologists</div>
+        <div class="doctor-spec">Neuro-Oncology</div>
+        <div class="doctor-desc">Rapid preliminary screening to support oncologists with AI-generated visual evidence and structured reports.</div>
+      </div>
+      <div class="doctor-card reveal" style="transition-delay:0.2s">
+        <div class="doctor-avatar" style="background:var(--navy2)">💻</div>
+        <div class="doctor-name">Researchers</div>
+        <div class="doctor-spec">Medical AI/ML</div>
+        <div class="doctor-desc">Open architecture enabling integration with research pipelines and clinical AI studies.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ AI SECTION ═══ -->
+<section class="ai-section" id="ai">
+  <div class="container">
+    <div class="section-label">Technology</div>
+    <h2>Powered by Advanced AI</h2>
+    <div class="ai-grid">
+      <ul class="ai-features">
+        <li class="reveal">
+          <div class="ai-feat-icon" style="background:var(--cyan-dim);color:var(--cyan)"><i class="fas fa-network-wired"></i></div>
+          <div>
+            <div class="ai-feat-title">Convolutional Neural Network</div>
+            <div class="ai-feat-desc">Deep CNN architecture trained on thousands of labeled MRI scans to detect tumor presence with high accuracy.</div>
+          </div>
+        </li>
+        <li class="reveal" style="transition-delay:0.1s">
+          <div class="ai-feat-icon" style="background:var(--violet-dim);color:#a78bfa"><i class="fas fa-fire"></i></div>
+          <div>
+            <div class="ai-feat-title">GradCAM Heatmaps</div>
+            <div class="ai-feat-desc">Gradient-weighted Class Activation Mapping visualizes exactly which brain regions drove the model's decision.</div>
+          </div>
+        </li>
+        <li class="reveal" style="transition-delay:0.2s">
+          <div class="ai-feat-icon" style="background:rgba(16,185,129,0.15);color:var(--emerald)"><i class="fas fa-shield-alt"></i></div>
+          <div>
+            <div class="ai-feat-title">Confidence Scoring</div>
+            <div class="ai-feat-desc">Every prediction comes with a calibrated confidence percentage for transparent, trustworthy results.</div>
+          </div>
+        </li>
+        <li class="reveal" style="transition-delay:0.3s">
+          <div class="ai-feat-icon" style="background:rgba(239,68,68,0.1);color:#f87171"><i class="fas fa-file-pdf"></i></div>
+          <div>
+            <div class="ai-feat-title">Structured PDF Reports</div>
+            <div class="ai-feat-desc">Auto-generated reports include original scan, heatmap, diagnosis, confidence, and metadata — ready for clinical use.</div>
+          </div>
+        </li>
+      </ul>
+
+      <div class="ai-visual reveal">
+        <div class="neural-grid">
+          {% for i in range(15) %}
+          <div class="neural-node">●</div>
+          {% endfor %}
+        </div>
+        <div class="ai-stat-row">
+          <div class="ai-stat-chip">
+            <div class="ai-stat-chip-num">98.4%</div>
+            <div class="ai-stat-chip-label">Val Accuracy</div>
+          </div>
+          <div class="ai-stat-chip">
+            <div class="ai-stat-chip-num">CNN</div>
+            <div class="ai-stat-chip-label">Architecture</div>
+          </div>
+          <div class="ai-stat-chip">
+            <div class="ai-stat-chip-num">GradCAM</div>
+            <div class="ai-stat-chip-label">Explainability</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="logo" style="text-decoration:none">
+          <div class="logo-icon"><i class="fas fa-brain"></i></div>
+          <div class="logo-text">Neuro<span>Scan</span> AI</div>
+        </a>
+        <p class="footer-desc">AI-powered brain tumor detection system built with deep learning, GradCAM visualization, and clinical-grade reporting.</p>
+        <div class="footer-socials">
+          <a class="social-btn" href="#"><i class="fab fa-github"></i></a>
+          <a class="social-btn" href="#"><i class="fab fa-linkedin"></i></a>
+          <a class="social-btn" href="#"><i class="fas fa-envelope"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Features</h4>
+        <ul class="footer-links">
+          <li><a href="#upload">MRI Upload</a></li>
+          <li><a href="#how">GradCAM Analysis</a></li>
+          <li><a href="#">PDF Report</a></li>
+          <li><a href="#ai">Deep Learning</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Project</h4>
+        <ul class="footer-links">
+          <li><a href="#">Model Architecture</a></li>
+          <li><a href="#">Dataset Info</a></li>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">About Developer</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Built by <span>Sameer Shamrao Sukhadeve</span> — CS Engineer | Data Science | AI/ML</span>
+      <a href="#">NeuroScan AI &copy; 2025</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── Particles ──
+  const pc = document.getElementById('particles');
+  for(let i=0; i<18; i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const s = Math.random()*4+2;
+    p.style.cssText = `
+      width:${s}px;height:${s}px;
+      left:${Math.random()*100}%;
+      animation-duration:${Math.random()*15+10}s;
+      animation-delay:${Math.random()*10}s;
+      background:${Math.random()>0.5?'var(--cyan)':'#a78bfa'};
+    `;
+    pc.appendChild(p);
+  }
+
+  // ── Upload ──
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const previewArea = document.getElementById('previewArea');
+  const previewImg = document.getElementById('previewImg');
+  const fileNameEl = document.getElementById('fileName');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const form = document.getElementById('uploadForm');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if(fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file){
+    if(!file.type.startsWith('image/')){ alert('Please upload an image file.'); return; }
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    fileInput.files = dt.files;
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewImg.src = e.target.result;
+      fileNameEl.textContent = file.name;
+      previewArea.classList.add('show');
+      dropZone.style.display = 'none';
+      analyzeBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeFile(){
+    fileInput.value = '';
+    previewArea.classList.remove('show');
+    dropZone.style.display = 'block';
+    analyzeBtn.disabled = true;
+    document.getElementById('resultSection').style.display = 'none';
+  }
+
+  async function sendPrediction(event) {
+    event.preventDefault();
+    if (!fileInput.files[0]) return;
+
+    document.getElementById('loadingOverlay').classList.add('show');
+    analyzeBtn.disabled = true;
+
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch('/predict', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        alert('Server error: ' + response.status + '\n' + text);
+        console.error('Server error', response.status, text);
+        return;
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        alert('Prediction failed: ' + data.error);
+        console.error('Prediction error', data.error);
+        return;
+      }
+
+      document.getElementById('labelText').textContent = data.label || 'Unknown';
+      document.getElementById('confidenceText').textContent = data.confidence ? data.confidence + '%' : 'N/A';
+      document.getElementById('heatmapImg').src = data.heatmap_url || '';
+      document.getElementById('reportBox').textContent = data.report || 'No report available.';
+      document.getElementById('resultSection').style.display = 'block';
+      document.getElementById('resultTitle').textContent = data.label || 'Analysis Complete';
+    } catch (error) {
+      alert('Could not connect to server. Make sure app.py is running.');
+      console.error(error);
+    } finally {
+      document.getElementById('loadingOverlay').classList.remove('show');
+      analyzeBtn.disabled = false;
+    }
+  }
+
+  form.addEventListener('submit', sendPrediction);
+  document.getElementById('downloadReportBtn').addEventListener('click', () => {
+    const reportText = document.getElementById('reportBox').textContent;
+    if (!reportText) return;
+    const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'neuroscan_report.txt';
+    link.click();
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    removeFile();
+    document.getElementById('resultSection').style.display = 'none';
+    previewImg.src = '';
+    fileNameEl.textContent = '—';
+  });
+
+  // ── Scroll reveal ──
+  const revealEls = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  revealEls.forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
