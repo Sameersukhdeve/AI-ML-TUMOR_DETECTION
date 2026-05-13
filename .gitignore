@@ -1,1 +1,23 @@
-*
+# Python
+__pycache__/
+*.py[cod]
+*.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+.Python
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Training datasets and uploads
+model/dataset/
+static/uploads/
+
+# Logs
+*.log
+

@@ -3,7 +3,7 @@
 
 def generate_report(label, confidence):
 
-    if label == 'Tumor Detected':
+    if label.startswith('Tumor Detected'):
         report = f"""
 MEDICAL ANALYSIS REPORT
 ========================
